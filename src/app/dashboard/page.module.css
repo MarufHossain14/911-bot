@@ -269,4 +269,58 @@
   letter-spacing: 1.5px;
   text-transform: uppercase;
   font-weight: 500;
+  margin-top: 32px;
+}
+
+.historySection {
+  width: 100%;
+  margin-top: 48px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historyCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTime {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.cardTranscript {
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.emptyHistory {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  padding: 24px 0;
 }

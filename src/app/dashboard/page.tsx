@@ -14,10 +14,11 @@ export default function Dashboard() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  const [history, setHistory] = useState<any[]>([]);
+
   useEffect(() => {
-    // Listen for auth state changes (handles OAuth redirect fragments automatically)
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth event:", event, session?.user?.email);
       if (session) {
         setUserEmail(session.user.email ?? "User");
         setLoading(false);
@@ -32,8 +33,8 @@ export default function Dashboard() {
       if (user) {
         setUserEmail(user.email ?? "User");
         setLoading(false);
+        fetchHistory();
       } else {
-        // Give OAuth a moment to process the fragment if it's there
         const timeout = setTimeout(async () => {
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) {
@@ -41,11 +42,25 @@ export default function Dashboard() {
           } else {
             setUserEmail(session.user.email ?? "User");
             setLoading(false);
+            fetchHistory();
           }
         }, 1500);
         return () => clearTimeout(timeout);
       }
     };
+
+    const fetchHistory = async () => {
+      const { data, error } = await supabase
+        .from("call_records")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (!error && data) {
+        setHistory(data);
+      }
+    };
+
     checkUser();
 
     // Close dropdown when clicking outside
@@ -61,6 +76,29 @@ export default function Dashboard() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [router]);
+
+  const CallHistory = () => {
+    if (history.length === 0) {
+      return <p className={styles.emptyHistory}>No recent conversations found.</p>;
+    }
+
+    return (
+      <div className={styles.historyList}>
+        {history.map((record) => (
+          <div key={record.id} className={styles.historyCard}>
+            <div className={styles.cardInfo}>
+              <span className={styles.cardTime}>
+                {new Date(record.created_at).toLocaleString()}
+              </span>
+              <p className={styles.cardTranscript}>
+                {record.original_text.substring(0, 100)}...
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -141,10 +179,7 @@ export default function Dashboard() {
         </div>
 
         <h1 className={styles.title}>Waiting for incoming calls...</h1>
-        <p className={styles.subtitle}>
-          Keep the app open to receive instant live translations from international callers.
-        </p>
-
+        
         <div className={styles.actionButtons}>
           <Link href="/incoming" className={styles.normalCallBtn}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -158,6 +193,12 @@ export default function Dashboard() {
             </svg>
             Translate Call
           </Link>
+        </div>
+
+        {/* Recent Activity Section */}
+        <div className={styles.historySection}>
+          <h2 className={styles.sectionTitle}>Recent Activity</h2>
+          <CallHistory />
         </div>
 
         <p className={styles.footerNote}>
