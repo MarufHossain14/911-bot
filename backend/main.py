@@ -3,8 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
 from api.websocket import websocket_endpoint
+from api.call_routes import router as call_router
 
 app = FastAPI(title="SafeGuard")
+app.include_router(call_router)
 
 app.add_middleware(
     CORSMiddleware,
