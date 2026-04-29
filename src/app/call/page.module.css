@@ -26,6 +26,13 @@
   background-color: #cbd5e1;
 }
 
+.phone {
+  font-size: 24px;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
 .logoContainer {
   display: flex;
   align-items: center;
@@ -102,7 +109,7 @@
   border-radius: 50%;
   overflow: hidden;
   z-index: 2;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 4px solid #ffffff;
 }
 
@@ -196,14 +203,16 @@
   gap: 4px;
 }
 
-.bubbleSourceLeft, .bubbleTargetLeft {
+.bubbleSourceLeft,
+.bubbleTargetLeft {
   max-width: 85%;
   padding: 14px 18px;
   font-size: 15px;
   line-height: 1.4;
 }
 
-.bubbleSourceRight, .bubbleTargetRight {
+.bubbleSourceRight,
+.bubbleTargetRight {
   max-width: 85%;
   padding: 14px 18px;
   font-size: 15px;
@@ -238,7 +247,8 @@
   font-weight: 500;
 }
 
-.messageTimeLeft, .messageTimeRight {
+.messageTimeLeft,
+.messageTimeRight {
   font-size: 11px;
   color: #94a3b8;
   margin-top: 4px;

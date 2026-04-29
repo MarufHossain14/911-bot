@@ -10,20 +10,43 @@ import styles from "./page.module.css";
 export default function Dashboard() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Get current user
-    const getUser = async () => {
+    // Listen for auth state changes (handles OAuth redirect fragments automatically)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event, session?.user?.email);
+      if (session) {
+        setUserEmail(session.user.email ?? "User");
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        router.push("/");
+      }
+    });
+
+    // Initial check
+    const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? "User");
+        setLoading(false);
       } else {
-        setUserEmail("Guest");
+        // Give OAuth a moment to process the fragment if it's there
+        const timeout = setTimeout(async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            router.push("/");
+          } else {
+            setUserEmail(session.user.email ?? "User");
+            setLoading(false);
+          }
+        }, 1500);
+        return () => clearTimeout(timeout);
       }
     };
-    getUser();
+    checkUser();
 
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -34,14 +57,32 @@ export default function Dashboard() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
+      subscription.unsubscribe();
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.mainContent}>
+          <div className={styles.phoneIconContainer}>
+            <div className={styles.translateDots}>
+              <span className={styles.dot}></span>
+              <span className={styles.dot}></span>
+              <span className={styles.dot}></span>
+            </div>
+          </div>
+          <h1 className={styles.title}>Verifying session...</h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -57,6 +98,8 @@ export default function Dashboard() {
           <button 
             className={styles.avatarBtn} 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="true"
           >
             <div className={styles.avatar}>
               <Image src="/abstract_bg.png" alt="User Avatar" width={40} height={40} style={{objectFit: 'cover'}} />
