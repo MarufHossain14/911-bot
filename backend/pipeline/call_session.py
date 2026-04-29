@@ -3,14 +3,14 @@ import base64
 from services.speech_to_text import transcribe
 from services.translate import translate
 from services.text_to_speech import speak
-from db.supabase_client import save_call_record  # 下面會寫
+from db.supabase_client import save_call_record 
 
 async def process_call(audio_bytes: bytes) -> dict:
     """
-    完整流程：
-    音訊 → 轉文字 → 翻譯 → 語音 → 回傳結果
-
-    回傳的 dict 會直接送給前端
+    whole call session processing logic:
+1. transcribe audio to text
+2. translate to English (or you can choose other target language)
+3. text to speech
     """
 
     # Step 1: audio transcribe to text
