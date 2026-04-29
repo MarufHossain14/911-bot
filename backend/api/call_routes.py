@@ -15,7 +15,7 @@ async def voice(request: Request):
     response = VoiceResponse()
     connect = Connect()
     # 串流音訊到我們的 WebSocket
-    connect.stream(url="wss://你的公開網址/stream")
+    connect.stream(url="wss://psychic-underpaid-vigorous.ngrok-free.dev/stream")
     response.append(connect)
     return str(response)
 
