@@ -9,10 +9,12 @@ async def save_call_record(
     translated_text: str,
     language_code: str,
 ):
-# every call record will be saved in "call_records" table, you can create this table in Supabase with columns: 
-#   id (uuid), original_text (text), translated_text (text), language_code (text), created_at (timestamp) await
     supabase.table("call_records").insert({
         "original_text":   original_text,
         "translated_text": translated_text,
         "language_code":   language_code,
     }).execute()
+
+async def get_call_records():
+    result = supabase.table("call_records").select("*").order("created_at", desc=True).execute()
+    return result.data
