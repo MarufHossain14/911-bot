@@ -63,3 +63,6 @@ venv/
 # Secrets
 .env
 .env.*
+
+.next/
+.node_modules/
