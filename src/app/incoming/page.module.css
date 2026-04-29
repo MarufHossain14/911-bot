@@ -1,0 +1,286 @@
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+
+.header {
+  width: 100%;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563eb;
+}
+
+.logoIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.settingsBtn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settingsBtn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #cbd5e1;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+  padding: 32px 20px;
+}
+
+.callStatus {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+.callerName {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 16px;
+  margin-bottom: 40px;
+}
+
+.location svg {
+  width: 16px;
+  height: 16px;
+}
+
+.callerAvatarWrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.halo1, .halo2 {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.halo1 {
+  width: 260px;
+  height: 260px;
+  background-color: #eff6ff;
+  z-index: 0;
+}
+
+.halo2 {
+  width: 220px;
+  height: 220px;
+  background-color: #dbeafe;
+  z-index: 1;
+}
+
+.callerAvatar {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 4px solid #ffffff;
+}
+
+.encryptionBadge {
+  position: absolute;
+  bottom: -16px;
+  z-index: 3;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  font-weight: 700;
+  color: #047857;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.greenDot {
+  width: 6px;
+  height: 6px;
+  background-color: #059669;
+  border-radius: 50%;
+}
+
+.languageBox {
+  width: 100%;
+  background-color: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.languageIconBox {
+  width: 40px;
+  height: 40px;
+  background-color: #bfdbfe;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+
+.languageIconBox svg {
+  width: 24px;
+  height: 24px;
+}
+
+.languageTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.languageTitle {
+  font-weight: 600;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.languageDesc {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.highlight {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.declineBtn, .acceptBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+
+.declineBtn:hover, .acceptBtn:hover {
+  transform: scale(1.02);
+}
+
+.declineBtn {
+  background-color: #ffe4e6;
+  color: #be123c;
+}
+
+.acceptBtn {
+  background-color: #69f0ae;
+  color: #064e3b;
+}
+
+.btnIconWrapperDecline, .btnIconWrapperAccept {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.btnIconWrapperDecline {
+  background-color: #be123c;
+}
+
+.btnIconWrapperAccept {
+  background-color: #064e3b;
+}
+
+.btnIconWrapperDecline svg, .btnIconWrapperAccept svg {
+  width: 28px;
+  height: 28px;
+}
+
+.btnIconWrapperDecline svg {
+  transform: rotate(135deg);
+}
