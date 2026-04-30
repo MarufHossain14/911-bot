@@ -1,52 +1,32 @@
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
-from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
-from pipeline.call_session import process_call
-from db.supabase_client import save_call_record
+from db.supabase_client import save_call_record, get_call_records
+import httpx
+from config import ELEVENLABS_API_KEY
 import json
 
 router = APIRouter()
 
-# 存放所有連線中的 WebSocket（用來即時推送）
+# 存放前端 WebSocket 連線
 active_connections = []
 
-# Twilio 打來時觸發
-@router.post("/voice")
-async def voice(request: Request):
-    response = VoiceResponse()
-    connect = Connect()
-    # 串流音訊到我們的 WebSocket
-    connect.stream(url="wss://psychic-underpaid-vigorous.ngrok-free.dev/stream")
-    response.append(connect)
-    return str(response)
+# ElevenLabs 通話結束後推 transcript 過來
+@router.post("/webhook/transcript")
+async def receive_transcript(request: Request):
+    data = await request.json()
+    print("收到 transcript：", data)  # 這樣終端機就會顯示
+    
+    await save_call_record(
+        original_text=data.get("transcript", ""),
+        translated_text=data.get("translated_transcript", ""),
+        language_code=data.get("language_code", "unknown"),
+        language_name=data.get("language_name", "Unknown"),
+    )
+    
+    # 即時推給前端
+    await broadcast(data)
+    return {"status": "ok"}
 
-# 即時音訊串流處理
-@router.websocket("/stream")
-async def stream(websocket: WebSocket):
-    await websocket.accept()
-    audio_buffer = bytearray()
-
-    try:
-        while True:
-            data = await websocket.receive_text()
-            msg = json.loads(data)
-
-            if msg["event"] == "media":
-                # 收到音訊 chunk
-                import base64
-                chunk = base64.b64decode(msg["media"]["payload"])
-                audio_buffer.extend(chunk)
-
-            elif msg["event"] == "stop":
-                # 通話結束，處理完整音訊
-                if audio_buffer:
-                    result = await process_call(bytes(audio_buffer))
-                    # 推給所有前端
-                    await broadcast(result)
-
-    except WebSocketDisconnect:
-        pass
-
-# 推送給前端
+# 前端連進來接收即時更新
 @router.websocket("/ws/live")
 async def ws_live(websocket: WebSocket):
     await websocket.accept()
