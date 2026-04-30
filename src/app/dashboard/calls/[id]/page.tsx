@@ -193,7 +193,7 @@ export default function CallDetailPage() {
           </svg>
           Dashboard
         </Link>
-        <div className={styles.logo}>Lumina</div>
+        <div className={styles.logo}>PriorityLine</div>
       </header>
 
       <main className={styles.main}>

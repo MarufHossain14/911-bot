@@ -263,7 +263,7 @@ export default function CallScreen() {
             <path d="m22 22-5-10-5 10" />
             <path d="M14 18h6" />
           </svg>
-          <span className={styles.logoText}>Lumina Translate</span>
+          <span className={styles.logoText}>PriorityLine</span>
         </div>
 
         {/* Mute toggle and User Avatar */}

@@ -1,8 +1,8 @@
 .container {
   min-height: 100vh;
-  background-color: #f6f8fb;
-  color: #172033;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
 }
 
 .header {
@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--muted);
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
@@ -34,7 +34,7 @@
 }
 
 .monitorLink:hover {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .monitorLink svg {
@@ -46,7 +46,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #1d4ed8;
+  color: var(--primary);
 }
 
 .logoIcon {
@@ -75,11 +75,11 @@
 .avatar {
   width: 40px;
   height: 40px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--surface);
   border-radius: 999px;
   overflow: hidden;
-  background-color: #cbd5e1;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  background-color: #d3dbe8;
+  box-shadow: var(--shadow-sm);
 }
 
 .dropdownMenu {
@@ -87,24 +87,24 @@
   top: calc(100% + 10px);
   right: 0;
   width: 240px;
-  background-color: #ffffff;
-  border: 1px solid #dbe3ef;
-  border-radius: 8px;
-  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.14);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   z-index: 50;
 }
 
 .dropdownHeader {
   padding: 14px 16px;
-  background-color: #f8fafc;
+  background-color: var(--surface-muted);
 }
 
 .dropdownUsername {
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: #172033;
+  color: var(--foreground);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -112,7 +112,7 @@
 
 .dropdownDivider {
   height: 1px;
-  background-color: #e2e8f0;
+  background-color: var(--border);
 }
 
 .dropdownItem,
@@ -133,11 +133,11 @@
 }
 
 .dropdownItemPrimary {
-  color: #1e293b;
+  color: var(--foreground);
 }
 
 .dropdownItemPrimary:hover {
-  background-color: #f1f5f9;
+  background-color: var(--surface-muted);
 }
 
 .dropdownItemPrimary svg {
@@ -147,11 +147,11 @@
 }
 
 .dropdownItem {
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .dropdownItem:hover {
-  background-color: #fef2f2;
+  background-color: #fdf2f2;
 }
 
 .dropdownItem svg {
@@ -171,10 +171,10 @@
   align-items: end;
   gap: 28px;
   padding: 30px;
-  background-color: #ffffff;
-  border: 1px solid #dfe7f2;
-  border-radius: 8px;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .statusPill {

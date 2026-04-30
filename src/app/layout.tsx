@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Lumina Translate",
+  title: "PriorityLine",
   description: "Real-time voice translation for 911 dispatchers",
 };
 
