@@ -15,6 +15,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [history, setHistory] = useState<any[]>([]);
+  const [incomingCall, setIncomingCall] = useState<any | null>(null);
 
   useEffect(() => {
     // Listen for auth state changes
@@ -63,6 +64,35 @@ export default function Dashboard() {
 
     checkUser();
 
+    // ── Supabase Realtime for Incoming Calls ───────────────────────────────────
+    
+    const callsChannel = supabase
+      .channel('incoming-calls')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'active_calls' },
+        (payload) => {
+          console.log('New incoming call:', payload);
+          setIncomingCall(payload.new);
+          
+          // Play a sound if possible
+          try {
+            const audio = new Audio('/ringtone.mp3'); // User needs to provide this or use a beep
+            audio.play().catch(() => {});
+          } catch (e) {}
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'active_calls' },
+        (payload) => {
+          if (payload.new.status === 'ended') {
+            setIncomingCall(null);
+          }
+        }
+      )
+      .subscribe();
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -73,6 +103,7 @@ export default function Dashboard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       subscription.unsubscribe();
+      supabase.removeChannel(callsChannel);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [router]);
@@ -131,8 +162,17 @@ export default function Dashboard() {
           </svg>
           <span className={styles.logoText}>Lumina</span>
         </div>
-        
-        <div className={styles.avatarContainer} ref={dropdownRef}>
+
+        <div className={styles.headerActions}>
+          <Link href="/monitor" className={styles.monitorLink}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Live Monitor
+          </Link>
+          
+          <div className={styles.avatarContainer} ref={dropdownRef}>
           <button 
             className={styles.avatarBtn} 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -159,9 +199,41 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </header>
+      </div>
+    </header>
 
       <main className={styles.mainContent}>
+        {/* Incoming Call Modal Overlay */}
+        {incomingCall && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <div className={styles.ringingAnim}>
+                <div className={styles.ringCircle}></div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+              </div>
+              <h2 className={styles.modalTitle}>Incoming Call</h2>
+              <p className={styles.modalSubtitle}>From: {incomingCall.caller_number || "Unknown Number"}</p>
+              <div className={styles.modalActions}>
+                <button 
+                  className={styles.declineBtn}
+                  onClick={() => setIncomingCall(null)}
+                >
+                  Decline
+                </button>
+                <Link 
+                  href={`/call?id=${incomingCall.conversation_id}`}
+                  className={styles.acceptBtn}
+                  onClick={() => setIncomingCall(null)}
+                >
+                  Accept
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={styles.statusPill}>
           <span className={styles.statusDot}></span>
           Live: Listening for calls

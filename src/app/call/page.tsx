@@ -96,6 +96,8 @@ export default function CallScreen() {
     }
   }, []);
 
+  const conversationIdRef = useRef<string | null>(null);
+
   // ── Session lifecycle ─────────────────────────────────────────────────────────
 
   const handleStart = useCallback(async () => {
@@ -114,8 +116,27 @@ export default function CallScreen() {
 
       await startSession({
         signedUrl,
-        onConnect: () => {
+        onConnect: (props: any) => {
           setIsConnecting(false);
+          conversationIdRef.current = props.conversationId;
+
+          // Register this web call as an active call
+          console.log("Registering active call with ID:", props.conversationId);
+          supabase
+            .from("active_calls")
+            .insert({
+              conversation_id: props.conversationId,
+              caller_number: "Web User",
+              status: "in-progress",
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error("Error registering active call:", error);
+              } else {
+                console.log("Active call registered successfully");
+              }
+            });
+
           // Start timer
           timerRef.current = setInterval(
             () => setElapsedSecs((s) => s + 1),
@@ -123,6 +144,14 @@ export default function CallScreen() {
           );
         },
         onDisconnect: () => {
+          // Update status to ended
+          if (conversationIdRef.current) {
+            supabase
+              .from("active_calls")
+              .update({ status: "ended" })
+              .eq("conversation_id", conversationIdRef.current)
+              .execute();
+          }
           if (timerRef.current) clearInterval(timerRef.current);
           // Save when disconnected by agent/server
           setMessages((current) => {
@@ -137,10 +166,31 @@ export default function CallScreen() {
           setIsConnecting(false);
         },
         onMessage: (msg) => {
+          let role: "agent" | "user" | null = null;
+          let text: string | null = null;
+
           if (msg.source === "ai" && msg.message) {
+            role = "agent";
+            text = msg.message;
             appendMessage("agent", msg.message);
           } else if (msg.source === "user" && msg.message) {
+            role = "user";
+            text = msg.message;
             appendMessage("user", msg.message);
+          }
+
+          // Save live transcript for monitoring
+          if (role && text && status === "connected") {
+            supabase
+              .from("live_transcripts")
+              .insert({
+                conversation_id: conversationIdRef.current || "web-session",
+                role,
+                text,
+              })
+              .then(({ error }) => {
+                if (error) console.error("Live transcript error:", error);
+              });
           }
         },
       });
@@ -154,6 +204,15 @@ export default function CallScreen() {
   const handleEnd = useCallback(async () => {
     // Save before ending
     await saveConversation(messages);
+    
+    // Update status to ended
+    if (conversationIdRef.current) {
+      await supabase
+        .from("active_calls")
+        .update({ status: "ended" })
+        .eq("conversation_id", conversationIdRef.current);
+    }
+
     await endSession();
     if (timerRef.current) clearInterval(timerRef.current);
     router.push("/dashboard");
