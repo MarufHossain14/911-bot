@@ -16,6 +16,79 @@ type CallRecord = {
   language_name?: string | null;
 };
 
+type PreviewTurn = {
+  role: string;
+  message: string;
+};
+
+function extractTranscriptTurns(text: string | null): PreviewTurn[] {
+  if (!text) return [];
+  const trimmed = text.trim();
+  const turns: PreviewTurn[] = [];
+
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      parsed.forEach((item) => {
+        if (
+          item &&
+          typeof item === "object" &&
+          "role" in item &&
+          "message" in item &&
+          typeof (item as { role?: unknown }).role === "string" &&
+          typeof (item as { message?: unknown }).message === "string"
+        ) {
+          const message = (item as { message: string }).message.trim();
+          if (!message) return;
+          turns.push({
+            role: (item as { role: string }).role,
+            message,
+          });
+        }
+      });
+    }
+  } catch {
+    // Fall back to regex extraction for non-JSON payloads.
+  }
+
+  if (turns.length > 0) return turns;
+
+  const singleQuoteRegex = /'role'\s*:\s*'([^']+)'[\s\S]*?'message'\s*:\s*'([^']*)'/g;
+  let singleQuoteMatch = singleQuoteRegex.exec(trimmed);
+  while (singleQuoteMatch) {
+    const role = singleQuoteMatch[1]?.trim();
+    const message = singleQuoteMatch[2]?.trim();
+    if (role && message) turns.push({ role, message });
+    singleQuoteMatch = singleQuoteRegex.exec(trimmed);
+  }
+
+  if (turns.length > 0) return turns;
+
+  const doubleQuoteRegex = /"role"\s*:\s*"([^"]+)"[\s\S]*?"message"\s*:\s*"([^"]*)"/g;
+  let doubleQuoteMatch = doubleQuoteRegex.exec(trimmed);
+  while (doubleQuoteMatch) {
+    const role = doubleQuoteMatch[1]?.trim();
+    const message = doubleQuoteMatch[2]?.trim();
+    if (role && message) turns.push({ role, message });
+    doubleQuoteMatch = doubleQuoteRegex.exec(trimmed);
+  }
+
+  return turns;
+}
+
+function formatPreviewText(record: CallRecord): PreviewTurn[] {
+  const source = record.translated_text || record.original_text || "No transcript saved.";
+  const parsedTurns = extractTranscriptTurns(source);
+  if (parsedTurns.length > 0) {
+    return parsedTurns.slice(0, 2).map((turn) => ({
+      role: turn.role.toLowerCase() === "agent" ? "Agent" : "Caller",
+      message: turn.message.replace(/\s+/g, " ").trim(),
+    }));
+  }
+
+  return [{ role: "Transcript", message: source.replace(/\s+/g, " ").trim() }];
+}
+
 function CallHistory({ history }: { history: CallRecord[] }) {
   if (history.length === 0) {
     return <p className={styles.emptyHistory}>No recent conversations found.</p>;
@@ -35,13 +108,16 @@ function CallHistory({ history }: { history: CallRecord[] }) {
                 {new Date(record.created_at).toLocaleString()}
               </span>
               <span className={styles.cardLanguage}>
-                {record.language_code || "Unknown"}
+                {record.language_name || record.language_code || "Unknown"}
               </span>
             </div>
-            <p className={styles.cardTranscript}>
-              {(record.original_text || "No transcript saved.").substring(0, 100)}
-              {(record.original_text || "").length > 100 ? "..." : ""}
-            </p>
+            <div className={styles.cardTranscript}>
+              {formatPreviewText(record).map((turn, index) => (
+                <p key={`${record.id}-preview-${index}`} className={styles.cardTranscriptLine}>
+                  <span className={styles.cardTranscriptRole}>{turn.role}:</span> {turn.message}
+                </p>
+              ))}
+            </div>
           </div>
         </Link>
       ))}
@@ -55,18 +131,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-<<<<<<< Updated upstream
-  const [history, setHistory] = useState<any[]>([]);
-  const [incomingCall, setIncomingCall] = useState<any | null>(null);
-=======
   const [history, setHistory] = useState<CallRecord[]>([]);
+  const [incomingCall, setIncomingCall] = useState<any | null>(null);
   const todayLabel = new Date().toDateString();
   const callsToday = history.filter(
     (record) => new Date(record.created_at).toDateString() === todayLabel
   ).length;
   const latestLanguage = history[0]?.language_code || "None";
->>>>>>> Stashed changes
 
   useEffect(() => {
     // Listen for auth state changes
@@ -239,7 +310,6 @@ export default function Dashboard() {
     </header>
 
       <main className={styles.mainContent}>
-<<<<<<< Updated upstream
         {/* Incoming Call Modal Overlay */}
         {incomingCall && (
           <div className={styles.modalOverlay}>
@@ -270,32 +340,16 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
-        <div className={styles.statusPill}>
-          <span className={styles.statusDot}></span>
-          Live: Listening for calls
-        </div>
-
-        <div className={styles.phoneIconContainer}>
-          <svg className={styles.phoneIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-          </svg>
-          <div className={styles.translateDots}>
-            <span className={styles.dot}></span>
-            <span className={styles.dot}></span>
-            <span className={styles.dot}></span>
-=======
         <section className={styles.hero}>
           <div>
             <div className={styles.statusPill}>
               <span className={styles.statusDot}></span>
-              Ready for calls
+              Line is live
             </div>
-            <h1 className={styles.title}>Dispatcher console</h1>
+            <h1 className={styles.title}>Emergency call workspace</h1>
             <p className={styles.subtitle}>
-              Start a translated call, review recent transcripts, and keep the next response moving.
+              Answer incoming callers, review recent transcripts, and hand off clear notes to the next responder.
             </p>
->>>>>>> Stashed changes
           </div>
 
           <div className={styles.actionButtons}>
@@ -338,9 +392,6 @@ export default function Dashboard() {
           <CallHistory history={history} />
         </div>
 
-        <p className={styles.footerNote}>
-          FOR TESTING PURPOSES ONLY
-        </p>
       </main>
     </div>
   );

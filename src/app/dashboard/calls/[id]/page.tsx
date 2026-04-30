@@ -15,11 +15,118 @@ type CallRecord = {
   language_name?: string | null;
 };
 
+type TranscriptTurn = {
+  role: string;
+  message: string;
+};
+
 function formatDate(value: string) {
-  return new Date(value).toLocaleString([], {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown time";
+  }
+
+  return date.toLocaleString([], {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function normalizeTranscript(text: string | null, fallback: string) {
+  if (!text) return fallback;
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return normalized || fallback;
+}
+
+function parseTranscriptTurns(text: string | null): TranscriptTurn[] {
+  if (!text) return [];
+  const trimmed = text.trim();
+
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      const turns = parsed
+        .map((item): TranscriptTurn | null => {
+          if (!item || typeof item !== "object") return null;
+          const maybeRole = (item as { role?: unknown }).role;
+          const maybeMessage = (item as { message?: unknown }).message;
+          if (typeof maybeRole !== "string" || typeof maybeMessage !== "string") return null;
+          const message = maybeMessage.trim();
+          if (!message) return null;
+          return { role: maybeRole, message };
+        })
+        .filter((item): item is TranscriptTurn => item !== null);
+
+      if (turns.length > 0) {
+        return turns;
+      }
+    }
+  } catch {
+    // Fall back to regex extraction for non-JSON payloads.
+  }
+
+  const turns: TranscriptTurn[] = [];
+  const singleQuoteRegex = /'role'\s*:\s*'([^']+)'[\s\S]*?'message'\s*:\s*'([^']*)'/g;
+  let singleQuoteMatch = singleQuoteRegex.exec(trimmed);
+  while (singleQuoteMatch) {
+    const role = singleQuoteMatch[1]?.trim();
+    const message = singleQuoteMatch[2]?.trim();
+    if (role && message) turns.push({ role, message });
+    singleQuoteMatch = singleQuoteRegex.exec(trimmed);
+  }
+
+  if (turns.length > 0) return turns;
+
+  const doubleQuoteRegex = /"role"\s*:\s*"([^"]+)"[\s\S]*?"message"\s*:\s*"([^"]*)"/g;
+  let doubleQuoteMatch = doubleQuoteRegex.exec(trimmed);
+  while (doubleQuoteMatch) {
+    const role = doubleQuoteMatch[1]?.trim();
+    const message = doubleQuoteMatch[2]?.trim();
+    if (role && message) turns.push({ role, message });
+    doubleQuoteMatch = doubleQuoteRegex.exec(trimmed);
+  }
+
+  return turns;
+}
+
+function TranscriptContent({
+  text,
+  fallback,
+  variant,
+}: {
+  text: string | null;
+  fallback: string;
+  variant: "original" | "translated";
+}) {
+  const turns = parseTranscriptTurns(text);
+  if (turns.length === 0) {
+    return <pre className={styles.transcript}>{normalizeTranscript(text, fallback)}</pre>;
+  }
+
+  const turnsClassName =
+    variant === "original"
+      ? `${styles.transcriptTurns} ${styles.transcriptTurnsOriginal}`
+      : `${styles.transcriptTurns} ${styles.transcriptTurnsTranslated}`;
+
+  return (
+    <div className={turnsClassName}>
+      {turns.map((turn, index) => {
+        const isAgent = turn.role.toLowerCase() === "agent";
+        const roleLabel = isAgent ? "Agent" : "Caller";
+        return (
+          <div
+            key={`${turn.role}-${index}-${turn.message.slice(0, 12)}`}
+            className={`${styles.turn} ${isAgent ? styles.turnAgent : styles.turnUser}`}
+          >
+            <div className={styles.turnHeader}>
+              <span className={styles.turnRole}>{roleLabel}</span>
+            </div>
+            <p className={styles.turnMessage}>{turn.message}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function CallDetailPage() {
@@ -35,6 +142,12 @@ export default function CallDetailPage() {
     const loadRecord = async () => {
       setLoading(true);
       setError(null);
+      const recordId = typeof params.id === "string" ? params.id : "";
+      if (!recordId) {
+        setError("Invalid call record identifier.");
+        setLoading(false);
+        return;
+      }
 
       const {
         data: { user },
@@ -48,7 +161,7 @@ export default function CallDetailPage() {
       const { data, error } = await supabase
         .from("call_records")
         .select("*")
-        .eq("id", params.id)
+        .eq("id", recordId)
         .single();
 
       if (!active) return;
@@ -102,6 +215,10 @@ export default function CallDetailPage() {
               <div>
                 <p className={styles.eyebrow}>Call Record</p>
                 <h1 className={styles.title}>{formatDate(record.created_at)}</h1>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaItem}>ID: {record.id}</span>
+                  <span className={styles.metaItem}>Type: Emergency call</span>
+                </div>
               </div>
               <div className={styles.languagePill}>
                 {record.language_name || record.language_code || "Unknown language"}
@@ -109,22 +226,28 @@ export default function CallDetailPage() {
             </section>
 
             <section className={styles.grid}>
-              <article className={styles.transcriptPanel}>
+              <article className={`${styles.transcriptPanel} ${styles.transcriptPanelOriginal}`}>
                 <div className={styles.panelHeader}>
                   <h2>Original Transcript</h2>
+                  <p>Live conversation turns captured during the call.</p>
                 </div>
-                <p className={styles.transcript}>
-                  {record.original_text || "No original transcript was saved."}
-                </p>
+                <TranscriptContent
+                  text={record.original_text}
+                  fallback="No original transcript was saved."
+                  variant="original"
+                />
               </article>
 
-              <article className={styles.transcriptPanel}>
+              <article className={`${styles.transcriptPanel} ${styles.transcriptPanelTranslated}`}>
                 <div className={styles.panelHeader}>
                   <h2>Translation / Notes</h2>
+                  <p>Interpretation stream and notes captured for review.</p>
                 </div>
-                <p className={styles.transcript}>
-                  {record.translated_text || "No translated transcript was saved."}
-                </p>
+                <TranscriptContent
+                  text={record.translated_text}
+                  fallback="No translated transcript was saved."
+                  variant="translated"
+                />
               </article>
             </section>
           </>
