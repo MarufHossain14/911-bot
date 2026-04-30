@@ -57,8 +57,35 @@ export default function CallScreen() {
   const [elapsedSecs, setElapsedSecs] = useState(0);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email ?? "User");
+      }
+    };
+    checkUser();
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -119,23 +146,7 @@ export default function CallScreen() {
         onConnect: (props: any) => {
           setIsConnecting(false);
           conversationIdRef.current = props.conversationId;
-
-          // Register this web call as an active call
-          console.log("Registering active call with ID:", props.conversationId);
-          supabase
-            .from("active_calls")
-            .insert({
-              conversation_id: props.conversationId,
-              caller_number: "Web User",
-              status: "in-progress",
-            })
-            .then(({ error }) => {
-              if (error) {
-                console.error("Error registering active call:", error);
-              } else {
-                console.log("Active call registered successfully");
-              }
-            });
+          console.log("Connected to ElevenLabs session:", props.conversationId);
 
           // Start timer
           timerRef.current = setInterval(
@@ -144,14 +155,6 @@ export default function CallScreen() {
           );
         },
         onDisconnect: () => {
-          // Update status to ended
-          if (conversationIdRef.current) {
-            supabase
-              .from("active_calls")
-              .update({ status: "ended" })
-              .eq("conversation_id", conversationIdRef.current)
-              .execute();
-          }
           if (timerRef.current) clearInterval(timerRef.current);
           // Save when disconnected by agent/server
           setMessages((current) => {
@@ -205,14 +208,6 @@ export default function CallScreen() {
     // Save before ending
     await saveConversation(messages);
     
-    // Update status to ended
-    if (conversationIdRef.current) {
-      await supabase
-        .from("active_calls")
-        .update({ status: "ended" })
-        .eq("conversation_id", conversationIdRef.current);
-    }
-
     await endSession();
     if (timerRef.current) clearInterval(timerRef.current);
     router.push("/dashboard");
@@ -248,16 +243,7 @@ export default function CallScreen() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <div className={styles.avatar}>
-          <Image
-            src="/abstract_bg.png"
-            alt="User"
-            width={32}
-            height={32}
-            style={{ objectFit: "cover" }}
-          />
-        </div>
-        <div className={styles.logoContainer}>
+        <div className={styles.logoContainer} onClick={() => router.push("/dashboard")} style={{cursor: 'pointer'}}>
           <svg
             className={styles.logoIcon}
             viewBox="0 0 24 24"
@@ -277,31 +263,60 @@ export default function CallScreen() {
           <span className={styles.logoText}>Lumina Translate</span>
         </div>
 
-        {/* Mute toggle */}
-        <button
-          id="mute-btn"
-          className={`${styles.settingsBtn} ${isMuted ? styles.muted : ""}`}
-          onClick={() => setMuted(!isMuted)}
-          title={isMuted ? "Unmute" : "Mute"}
-          disabled={!isConnected}
-        >
-          {isMuted ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="1" y1="1" x2="23" y2="23" />
-              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          )}
-        </button>
+        {/* Mute toggle and User Avatar */}
+        <div className={styles.headerRight}>
+          <button
+            id="mute-btn"
+            className={`${styles.settingsBtn} ${isMuted ? styles.muted : ""}`}
+            onClick={() => setMuted(!isMuted)}
+            title={isMuted ? "Unmute" : "Mute"}
+            disabled={!isConnected}
+          >
+            {isMuted ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            )}
+          </button>
+
+          <div className={styles.avatarContainer} ref={dropdownRef}>
+            <button 
+              className={styles.avatarBtn} 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              aria-expanded={isDropdownOpen}
+            >
+              <div className={styles.avatar}>
+                <Image src="/abstract_bg.png" alt="User Avatar" width={40} height={40} style={{objectFit: 'cover'}} />
+              </div>
+            </button>
+
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownHeader}>
+                  <span className={styles.dropdownUsername}>{userEmail}</span>
+                </div>
+                <div className={styles.dropdownDivider}></div>
+                <button className={styles.dropdownItem} onClick={handleLogout}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       <main className={styles.mainContent}>

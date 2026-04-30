@@ -26,6 +26,35 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
+    
+    // Enrich conversations with details to get phone numbers/metadata
+    if (data.conversations && data.conversations.length > 0) {
+      const enrichedConversations = await Promise.all(
+        data.conversations.map(async (conv: any) => {
+          try {
+            const detailRes = await fetch(
+              `https://api.elevenlabs.io/v1/convai/conversations/${conv.conversation_id}`,
+              {
+                headers: {
+                  "xi-api-key": apiKey,
+                },
+              }
+            );
+            if (detailRes.ok) {
+              const detailData = await detailRes.json();
+              // Combine summary and detail
+              return { ...conv, ...detailData };
+            }
+            return conv;
+          } catch (err) {
+            console.error(`Error enriching conversation ${conv.conversation_id}:`, err);
+            return conv;
+          }
+        })
+      );
+      data.conversations = enrichedConversations;
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching ElevenLabs conversations:", error);

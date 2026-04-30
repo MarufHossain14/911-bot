@@ -39,17 +39,66 @@ export default function MonitorPage() {
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         
-        // Map and filter for in-progress calls only
+        // Map and show latest 10 conversations regardless of status
         if (data.conversations) {
           const mapped: ActiveCall[] = data.conversations
-            .filter((c: any) => c.status === "in-progress")
-            .map((c: any) => ({
-              id: c.conversation_id,
-              conversation_id: c.conversation_id,
-              caller_number: c.metadata?.caller_id || "Web/Other",
-              status: c.status,
-              created_at: new Date(c.start_time_unix_secs * 1000).toISOString(),
-            }));
+            .slice(0, 10) // Only show latest 10
+            .map((c: any) => {
+              // Try to find ANY field that looks like a phone number
+              let phoneNumber = null;
+              
+              // 1. Check top-level user_id (common for phone calls)
+              if (c.user_id && (c.user_id.startsWith('+') || /^\d{10,}$/.test(c.user_id.replace(/\s/g, '')))) {
+                phoneNumber = c.user_id;
+              }
+              
+              // 2. Check nested phone_call metadata
+              if (!phoneNumber) {
+                phoneNumber = c.metadata?.phone_call?.external_number || c.metadata?.phone_call?.caller_number;
+              }
+
+              // 3. Check known metadata fields
+              if (!phoneNumber) {
+                const possibleFields = ['caller_id', 'phone_number', 'caller_number', 'from_number', 'to_number', 'number'];
+                for (const field of possibleFields) {
+                  if (c.metadata?.[field]) {
+                    phoneNumber = c.metadata[field];
+                    break;
+                  }
+                }
+              }
+              
+              // 4. Check initiation client data (dynamic variables)
+              if (!phoneNumber) {
+                phoneNumber = c.conversation_initiation_client_data?.dynamic_variables?.system__caller_id;
+              }
+              
+              // 5. If still not found, check ALL metadata values (even nested)
+              if (!phoneNumber && c.metadata) {
+                const checkObject = (obj: any): string | null => {
+                  for (const key in obj) {
+                    const val = obj[key];
+                    if (typeof val === 'string' && (val.startsWith('+') || /^\d{10,}$/.test(val.replace(/\s/g, '')))) {
+                      return val;
+                    } else if (typeof val === 'object' && val !== null) {
+                      const found = checkObject(val);
+                      if (found) return found;
+                    }
+                  }
+                  return null;
+                };
+                phoneNumber = checkObject(c.metadata);
+              }
+                
+              const callerDisplay = phoneNumber ? phoneNumber : "Web";
+              return {
+                id: c.conversation_id,
+                conversation_id: c.conversation_id,
+                caller_number: `Agent / ${callerDisplay}`,
+                status: c.status,
+                created_at: new Date(c.start_time_unix_secs * 1000).toISOString(),
+              };
+            });
           
           setActiveCalls(mapped);
           
@@ -89,12 +138,14 @@ export default function MonitorPage() {
         console.log("Transcript data for", selectedCallId, data);
 
         if (data.transcript) {
-          const mappedMsgs: Message[] = data.transcript.map((t: any, idx: number) => ({
-            id: `${selectedCallId}-${idx}`,
-            role: t.role === "agent" ? "agent" : "user",
-            text: t.message || t.text || "", // Check for both message and text
-            created_at: new Date().toISOString(),
-          }));
+          const mappedMsgs: Message[] = data.transcript
+            .map((t: any, idx: number) => ({
+              id: `${selectedCallId}-${idx}`,
+              role: t.role === "agent" ? "agent" : "user",
+              text: (t.message || t.text || "").trim(), // Check for both message and text
+              created_at: new Date().toISOString(),
+            }))
+            .filter((msg: Message) => msg.text.length > 0); // Remove empty bubbles
           setMessages(mappedMsgs);
         }
       } catch (err) {
@@ -142,7 +193,9 @@ export default function MonitorPage() {
                 onClick={() => setSelectedCallId(call.conversation_id)}
               >
                 <div className={styles.callItemHeader}>
-                  <span className={styles.callStatus}>{call.status.toUpperCase()}</span>
+                  <span className={`${styles.callStatus} ${call.status === 'in-progress' ? styles.statusLive : styles.statusDone}`}>
+                    {call.status.toUpperCase()}
+                  </span>
                   <span className={styles.callTime}>{new Date(call.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
                 <div className={styles.callCaller}>{call.caller_number || "Incoming..."}</div>
