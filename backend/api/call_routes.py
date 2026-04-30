@@ -9,24 +9,24 @@ router = APIRouter()
 # 存放前端 WebSocket 連線
 active_connections = []
 
-# ElevenLabs 通話結束後推 transcript 過來
+# ElevenLabs push transcript to this endpoint 
+#after receiving, save to supabase and broadcast to all connected frontends
 @router.post("/webhook/transcript")
 async def receive_transcript(request: Request):
     data = await request.json()
-    print("收到 transcript：", data)  # 這樣終端機就會顯示
+    print("received transcript:", data)  # this should show the transcript and metadata in the backend console
     
     await save_call_record(
         original_text=data.get("transcript", ""),
         translated_text=data.get("translated_transcript", ""),
         language_code=data.get("language_code", "unknown"),
-        language_name=data.get("language_name", "Unknown"),
     )
     
-    # 即時推給前端
+    # push to frontend via WebSocket
     await broadcast(data)
     return {"status": "ok"}
 
-# 前端連進來接收即時更新
+# WebSocket endpoint for frontend to receive live updates
 @router.websocket("/ws/live")
 async def ws_live(websocket: WebSocket):
     await websocket.accept()

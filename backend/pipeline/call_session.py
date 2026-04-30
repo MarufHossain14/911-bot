@@ -43,7 +43,6 @@ async def process_call(audio_bytes: bytes) -> dict:
     return {
         "original_text":   original_text,
         "language_code":   language_code,
-        "language_name":   language_name,
         "translated_text": translated_text,
         # audio to base64, so it can be sent to the frontend as JSON
         "audio_b64": base64.b64encode(audio_mp3).decode("utf-8"),

@@ -58,15 +58,40 @@ async def fetch_transcripts():
             data = response.json()
             conversations = data.get("conversations", [])
 
-            # 存進 Supabase
+            results = []
             for conv in conversations:
-                await save_call_record(
-                    original_text=conv.get("transcript", ""),
-                    translated_text="",
-                    language_code=conv.get("metadata", {}).get("language_code", "unknown"),
-                    language_name=conv.get("metadata", {}).get("language_name", "Unknown"),
+                conv_id = conv.get("conversation_id")
+                
+                detail = await client.get(
+                    f"https://api.elevenlabs.io/v1/convai/conversations/{conv_id}",
+                    headers={"xi-api-key": ELEVENLABS_API_KEY},
                 )
+                detail_data = detail.json()
+                transcript = detail_data.get("transcript", [])
+                
+                print(f"\n📞 Call ID: {conv_id}")
+                print(f"📋 Title: {conv.get('call_summary_title')}")
+                print(f"🌍 Language: {conv.get('main_language')}")
+                print(f"💬 Transcript:")
+                for msg in transcript:
+                    role = msg.get("role", "")
+                    text = msg.get("message", "")
+                    print(f"  {role}: {text}")
+                
+                await save_call_record(
+                    original_text=str(transcript),
+                    translated_text=conv.get("call_summary_title", ""),
+                    language_code=conv.get("main_language", "unknown"),
+                    
+                )
+                
+                results.append({
+                    "conversation_id": conv_id,
+                    "title": conv.get("call_summary_title"),
+                    "language": conv.get("main_language"),
+                    "transcript": transcript,
+                })
 
-            return conversations
+            return results
     except Exception as e:
         raise HTTPException(500, str(e))

@@ -8,11 +8,14 @@ async def save_call_record(
     original_text: str,
     translated_text: str,
     language_code: str,
+    
+
 ):
     supabase.table("call_records").insert({
         "original_text":   original_text,
         "translated_text": translated_text,
         "language_code":   language_code,
+        
     }).execute()
 
 async def get_call_records():

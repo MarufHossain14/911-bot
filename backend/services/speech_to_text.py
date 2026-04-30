@@ -15,6 +15,5 @@ async def transcribe(audio_bytes: bytes)->dict:
     return {
         "text": data.get("text", ""),
         "language_code": data.get("language_code", "unknown"),
-        "language_name": data.get("language_name", "unknown"),
     }
     
