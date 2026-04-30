@@ -7,6 +7,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : "An unexpected error occurred";
+}
+
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +28,8 @@ export default function Register() {
         },
       });
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
@@ -35,7 +39,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -46,8 +50,8 @@ export default function Register() {
         // Successfully registered! 
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

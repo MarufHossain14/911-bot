@@ -7,6 +7,48 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
+type CallRecord = {
+  id: string;
+  created_at: string;
+  original_text: string | null;
+  translated_text: string | null;
+  language_code: string | null;
+  language_name?: string | null;
+};
+
+function CallHistory({ history }: { history: CallRecord[] }) {
+  if (history.length === 0) {
+    return <p className={styles.emptyHistory}>No recent conversations found.</p>;
+  }
+
+  return (
+    <div className={styles.historyList}>
+      {history.map((record) => (
+        <Link
+          key={record.id}
+          href={`/dashboard/calls/${record.id}`}
+          className={styles.historyCard}
+        >
+          <div className={styles.cardInfo}>
+            <div className={styles.cardMeta}>
+              <span className={styles.cardTime}>
+                {new Date(record.created_at).toLocaleString()}
+              </span>
+              <span className={styles.cardLanguage}>
+                {record.language_code || "Unknown"}
+              </span>
+            </div>
+            <p className={styles.cardTranscript}>
+              {(record.original_text || "No transcript saved.").substring(0, 100)}
+              {(record.original_text || "").length > 100 ? "..." : ""}
+            </p>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -14,8 +56,17 @@ export default function Dashboard() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+<<<<<<< Updated upstream
   const [history, setHistory] = useState<any[]>([]);
   const [incomingCall, setIncomingCall] = useState<any | null>(null);
+=======
+  const [history, setHistory] = useState<CallRecord[]>([]);
+  const todayLabel = new Date().toDateString();
+  const callsToday = history.filter(
+    (record) => new Date(record.created_at).toDateString() === todayLabel
+  ).length;
+  const latestLanguage = history[0]?.language_code || "None";
+>>>>>>> Stashed changes
 
   useEffect(() => {
     // Listen for auth state changes
@@ -108,29 +159,6 @@ export default function Dashboard() {
     };
   }, [router]);
 
-  const CallHistory = () => {
-    if (history.length === 0) {
-      return <p className={styles.emptyHistory}>No recent conversations found.</p>;
-    }
-
-    return (
-      <div className={styles.historyList}>
-        {history.map((record) => (
-          <div key={record.id} className={styles.historyCard}>
-            <div className={styles.cardInfo}>
-              <span className={styles.cardTime}>
-                {new Date(record.created_at).toLocaleString()}
-              </span>
-              <p className={styles.cardTranscript}>
-                {record.original_text.substring(0, 100)}...
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -211,6 +239,7 @@ export default function Dashboard() {
     </header>
 
       <main className={styles.mainContent}>
+<<<<<<< Updated upstream
         {/* Incoming Call Modal Overlay */}
         {incomingCall && (
           <div className={styles.modalOverlay}>
@@ -255,30 +284,58 @@ export default function Dashboard() {
             <span className={styles.dot}></span>
             <span className={styles.dot}></span>
             <span className={styles.dot}></span>
+=======
+        <section className={styles.hero}>
+          <div>
+            <div className={styles.statusPill}>
+              <span className={styles.statusDot}></span>
+              Ready for calls
+            </div>
+            <h1 className={styles.title}>Dispatcher console</h1>
+            <p className={styles.subtitle}>
+              Start a translated call, review recent transcripts, and keep the next response moving.
+            </p>
+>>>>>>> Stashed changes
           </div>
-        </div>
 
-        <h1 className={styles.title}>Waiting for incoming calls...</h1>
-        
-        <div className={styles.actionButtons}>
-          <Link href="/incoming" className={styles.normalCallBtn}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            Normal Call
-          </Link>
-          <Link href="/incoming" className={styles.translateCallBtn}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
-            </svg>
-            Translate Call
-          </Link>
-        </div>
+          <div className={styles.actionButtons}>
+            <Link href="/incoming" className={styles.translateCallBtn}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+              </svg>
+              Translate Call
+            </Link>
+            <Link href="/incoming" className={styles.normalCallBtn}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              Normal Call
+            </Link>
+          </div>
+        </section>
+
+        <section className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Recent calls</span>
+            <strong>{history.length}</strong>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Today</span>
+            <strong>{callsToday}</strong>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Latest language</span>
+            <strong>{latestLanguage}</strong>
+          </div>
+        </section>
 
         {/* Recent Activity Section */}
         <div className={styles.historySection}>
-          <h2 className={styles.sectionTitle}>Recent Activity</h2>
-          <CallHistory />
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Recent activity</h2>
+            <span>{history.length ? "Click a record to review it" : "No saved calls yet"}</span>
+          </div>
+          <CallHistory history={history} />
         </div>
 
         <p className={styles.footerNote}>

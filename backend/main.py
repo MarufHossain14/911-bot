@@ -18,6 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "SafeGuard backend"}
+
 # REST routes
 app.include_router(router)
 

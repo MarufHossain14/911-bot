@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -216,8 +215,12 @@ export default function CallScreen() {
   // ── Auto-start on mount ───────────────────────────────────────────────────────
 
   useEffect(() => {
-    handleStart();
+    const startTask = window.setTimeout(() => {
+      handleStart();
+    }, 0);
+
     return () => {
+      window.clearTimeout(startTask);
       if (timerRef.current) clearInterval(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

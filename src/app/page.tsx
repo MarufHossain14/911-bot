@@ -7,6 +7,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : "An unexpected error occurred";
+}
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +28,8 @@ export default function Login() {
         },
       });
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
@@ -35,7 +39,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -45,8 +49,8 @@ export default function Login() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -146,7 +150,7 @@ export default function Login() {
         </div>
 
         <p className={styles.footerText}>
-          Don't have an account? <Link href="/register" className={styles.createAccount}>Create Account</Link>
+          Don&apos;t have an account? <Link href="/register" className={styles.createAccount}>Create Account</Link>
         </p>
       </main>
     </div>
