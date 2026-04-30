@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
@@ -29,6 +31,9 @@ export default function MonitorPage() {
   const [selectedCallId, setSelectedCallId] = useState<string | null>(conversationId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch all conversations from ElevenLabs API
@@ -116,8 +121,33 @@ export default function MonitorPage() {
     fetchConversations();
     // Poll for the list every 10 seconds
     const interval = setInterval(fetchConversations, 10000);
-    return () => clearInterval(interval);
+
+    // User authentication check
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email ?? "Supervisor");
+      }
+    };
+    checkUser();
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [selectedCallId]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   // 2. Poll for transcripts for selected call from ElevenLabs
   useEffect(() => {
@@ -172,9 +202,46 @@ export default function MonitorPage() {
           </svg>
           <span className={styles.logoText}>Lumina Live Monitor</span>
         </div>
-        <div className={styles.statusBadge}>
-          <span className={`${styles.statusDot} ${activeCalls.length > 0 ? styles.live : ""}`} />
-          {activeCalls.length} ACTIVE {activeCalls.length === 1 ? "CALL" : "CALLS"}
+        <div className={styles.headerRight}>
+          <div className={styles.statusBadge}>
+            <span className={`${styles.statusDot} ${activeCalls.length > 0 ? styles.live : ""}`} />
+            {activeCalls.length} ACTIVE {activeCalls.length === 1 ? "CALL" : "CALLS"}
+          </div>
+
+          <div className={styles.avatarContainer} ref={dropdownRef}>
+            <button 
+              className={styles.avatarBtn} 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              aria-expanded={isDropdownOpen}
+            >
+              <div className={styles.avatar}>
+                <Image src="/abstract_bg.png" alt="User Avatar" width={40} height={40} style={{objectFit: 'cover'}} />
+              </div>
+            </button>
+
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownHeader}>
+                  <span className={styles.dropdownUsername}>{userEmail}</span>
+                </div>
+                <div className={styles.dropdownDivider}></div>
+                <Link href="/admin" className={styles.dropdownItemPrimary}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                  </svg>
+                  Admin Analytics
+                </Link>
+                <button className={styles.dropdownItem} onClick={handleLogout}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

@@ -58,18 +58,26 @@ export default function IncomingCall() {
           </button>
 
           {isDropdownOpen && (
-            <div className={styles.dropdownMenu}>
-              <div className={styles.dropdownHeader}>
-                <span className={styles.dropdownUsername}>{userEmail}</span>
+              <div className={styles.dropdownMenu}>
+                <div className={styles.dropdownHeader}>
+                  <span className={styles.dropdownUsername}>{userEmail}</span>
+                </div>
+                <div className={styles.dropdownDivider}></div>
+                <Link href="/admin" className={styles.dropdownItemPrimary}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                  </svg>
+                  Admin Analytics
+                </Link>
+                <button className={styles.dropdownItem} onClick={handleLogout}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  Logout
+                </button>
               </div>
-              <div className={styles.dropdownDivider}></div>
-              <button className={styles.dropdownItem} onClick={handleLogout}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Logout
-              </button>
-            </div>
           )}
         </div>
       </header>

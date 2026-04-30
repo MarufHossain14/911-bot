@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   try {
     // Fetch conversations for the specific agent
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agentId}&page_size=20`,
+      `https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agentId}&page_size=100`,
       {
         headers: {
           "xi-api-key": apiKey,

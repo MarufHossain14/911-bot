@@ -140,7 +140,7 @@
   background-color: #e2e8f0;
 }
 
-.dropdownItem {
+.dropdownItem, .dropdownItemPrimary {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -150,10 +150,28 @@
   border: none;
   font-size: 14px;
   font-weight: 500;
-  color: #b91c1c;
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.dropdownItemPrimary {
+  color: #1e293b;
+}
+
+.dropdownItemPrimary:hover {
+  background-color: #f1f5f9;
+}
+
+.dropdownItemPrimary svg {
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+}
+
+.dropdownItem {
+  color: #b91c1c;
 }
 
 .dropdownItem:hover {
