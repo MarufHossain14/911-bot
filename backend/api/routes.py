@@ -1,9 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from pipeline.call_session import process_call
 from db.supabase_client import get_call_records, save_call_record
 import httpx
 from config import ELEVENLABS_API_KEY
-
 router = APIRouter()
 
 @router.post("/webhook/elevenlabs")
